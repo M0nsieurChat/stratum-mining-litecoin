@@ -230,11 +230,55 @@ class TemplateRegistry(object):
         header_hex = header_hex+"000000800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000"
         
                  
-        target_user = self.diff_to_target(difficulty)        
-        if hash_int > target_user and \
-		( 'prev_jobid' not in session or session['prev_jobid'] < job_id \
-		or 'prev_diff' not in session or hash_int > self.diff_to_target(session['prev_diff']) ):
-            raise SubmitException("Share is above target")
+        target_user = self.diff_to_target(difficulty)     
+        
+        # This code is not fine to me.
+        # It is working as long as actual diff is lower than previous diff.
+        # You can understand this if you want in difficulty words rather than target words
+        # Being above target == share_diff < stratum_difficulty.
+        # This check does the following (forgetting the checks on the session)
+        # if share_diff < difficulty AND share_diff < previousDifficulty: DISCARD share
+        # Replacing with numbers :
+        # share_diff = 16
+        # difficulty = 32
+        # previousDifficulty = 64 
+        # 16 < 32 AND 16 < 64. Discard share.
+        # Replacing with numbers ina  funny way :
+        # share_diff = 38
+        # difficulty = 64
+        # previousDifficulty = 32
+        # 38 < 64 AND 38 IS NOT < 32. False. Check doesn't trigger.
+        # This share at diff 38 will be accepted and logged as diff 64 in database.
+        # You need to decompose this check.
+        #if hash_int > target_user and \
+	#	( 'prev_jobid' not in session or session['prev_jobid'] < job_id \
+	#	or 'prev_diff' not in session or hash_int > self.diff_to_target(session['prev_diff']) ):
+        #    raise SubmitException("Share is above target")
+	
+	
+	# Prev Job not being known is a thing that needs to be rejected.
+	if 'prev_jobid' not in session or session['prev_jobid'] < job_id:
+		raise SubmitException("Sorry, an error occured with session")
+	
+	# If you want to raise an exception whenever prevdiff is not known..
+	if 'prev_diff' not in session:
+		raise SubmitException("Sorry, an error occured with session")
+
+	# I'm not a python coder
+	shareAtOldDiff = false	
+	
+	# Share being checked is above target ? It still can be below previous diff..
+	if hash_int > target_user:
+		if hash_int > self.diff_to_target(session['prev_diff']):
+			# Too bad for you
+			raise SubmitException("Share is above target")
+		else:
+			# If you reach this state, the share didn't met the actual stratum diff target (it was above).
+			# Somehow, this share was still below the previous diff target and you'd need to log it at its previous diff.
+			shareAtOldDiff = self.diff_to_target(session['prev_diff'])
+		
+			
+		
 
         # Mostly for debugging purposes
         target_info = self.diff_to_target(100000)
@@ -278,4 +322,4 @@ class TemplateRegistry(object):
             block_hash_hex = block_hash_bin[::-1].encode('hex_codec')
             return (header_hex, block_hash_hex, share_diff, None)
         else:
-            return (header_hex, scrypt_hash_hex, share_diff, None)
+            return (header_hex, scrypt_hash_hex, share_diff, None, shareAtOldDiff)
