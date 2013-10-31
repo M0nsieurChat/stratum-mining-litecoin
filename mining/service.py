@@ -96,7 +96,7 @@ class MiningService(GenericService):
         # This checks if submitted share meet all requirements
         # and it is valid proof of work.
         try:
-            (block_header, block_hash, share_diff, on_submit) = Interfaces.template_registry.submit_share(job_id,
+            (block_header, block_hash, share_diff, on_submit, shareAtOldDiff) = Interfaces.template_registry.submit_share(job_id,
                 worker_name, session, extranonce1_bin, extranonce2, ntime, nonce, difficulty)
         except SubmitException as e:
             # block_header and block_hash are None when submitted data are corrupted
@@ -104,9 +104,16 @@ class MiningService(GenericService):
                 submit_time, False, ip, e[0], 0)    
             raise
             
-             
-        Interfaces.share_manager.on_submit_share(worker_name, block_header,
-            block_hash, difficulty, submit_time, True, ip, '', share_diff)
+        # Let's patch at least for a share that didn't met job.target (aka didn't solve a block)
+        # shareAtOldDiff still at false : cool, nothing unusual
+        if shareAtOldDiff = false:
+                Interfaces.share_manager.on_submit_share(worker_name, block_header,
+                block_hash, difficulty, submit_time, True, ip, '', share_diff)
+        else:
+                # This is a share that was above actual stratum diff but below old diff. 
+                # The cool thing is this old diff is shareAtOldDiff.
+                Interfaces.share_manager.on_submit_share(worker_name, block_header,
+                block_hash, shareAtOldDiff, submit_time, True, ip, '', share_diff)
         
         if on_submit != None:
             # Pool performs submitblock() to litecoind. Let's hook
