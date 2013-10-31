@@ -275,7 +275,7 @@ class TemplateRegistry(object):
 		else:
 			# If you reach this state, the share didn't met the actual stratum diff target (it was above).
 			# Somehow, this share was still below the previous diff target and you'd need to log it at its previous diff.
-			shareAtOldDiff = self.diff_to_target(session['prev_diff'])
+			shareAtOldDiff = session['prev_diff']
 		
 			
 		
