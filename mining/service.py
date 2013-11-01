@@ -106,7 +106,7 @@ class MiningService(GenericService):
             
         # Let's patch at least for a share that didn't met job.target (aka didn't solve a block)
         # shareAtOldDiff still at false : cool, nothing unusual
-        if shareAtOldDiff = false:
+        if shareAtOldDiff is false:
                 Interfaces.share_manager.on_submit_share(worker_name, block_header,
                 block_hash, difficulty, submit_time, True, ip, '', share_diff)
         else:
