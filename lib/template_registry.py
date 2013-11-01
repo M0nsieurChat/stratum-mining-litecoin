@@ -256,27 +256,25 @@ class TemplateRegistry(object):
         #    raise SubmitException("Share is above target")
 	
 	
-	# Prev Job not being known is a thing that needs to be rejected.
-	if 'prev_jobid' not in session or session['prev_jobid'] < job_id:
-		raise SubmitException("Sorry, an error occured with session")
 	
-	# If you want to raise an exception whenever prevdiff is not known..
-	if 'prev_diff' not in session:
-		raise SubmitException("Sorry, an error occured with session")
 
 	# I'm not a python coder
-	shareAtOldDiff = false	
+	shareAtOldDiff = False	
 	
-	# Share being checked is above target ? It still can be below previous diff..
-	if hash_int > target_user:
-		if hash_int > self.diff_to_target(session['prev_diff']):
-			# Too bad for you
-			raise SubmitException("Share is above target")
-		else:
-			# If you reach this state, the share didn't met the actual stratum diff target (it was above).
-			# Somehow, this share was still below the previous diff target and you'd need to log it at its previous diff.
-			shareAtOldDiff = session['prev_diff']
-		
+	# Share being checked is above target ? It still can be below previous diff.. (if we are running vardiff)
+	if 'prev_diff' in session:
+		if hash_int > target_user:
+			if hash_int > self.diff_to_target(session['prev_diff']):
+				# Too bad for you
+				raise SubmitException("Share is above target")
+			else:
+				# If you reach this state, the share didn't met the actual stratum diff target (it was above).
+				# Somehow, this share was still below the previous diff target and you'd need to log it at its previous diff.
+				shareAtOldDiff = session['prev_diff']
+	# prev_diff from session is unknown, either we are not running vardiff or the worker just started his mining session.
+	else:
+		 if hash_int > target_user:
+                        raise SubmitException("Share is above target")
 			
 		
 
